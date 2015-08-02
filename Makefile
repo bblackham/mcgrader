@@ -3,7 +3,7 @@
 # DEFINES = -DCACHE_LINE_SIZE=$(getconf LEVEL1_DCACHE_LINESIZE)
 DEFINES = -DCACHE_LINE_SIZE=64
 
-CFLAGS = -O2 -Wall -g $(DEFINES)
+CFLAGS = -O2 -Wall -g -std=gnu99 $(DEFINES)
 
 all: remote solution
 

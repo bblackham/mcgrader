@@ -1,6 +1,7 @@
 #include "shm_interface.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -12,6 +13,8 @@
 #else
 #error
 #endif
+
+#define SHM_FILE "/tmp/grader.shm"
 
 #ifndef CACHE_LINE_SIZE
 #error "Build file must specify CACHE_LINE_SIZE"
@@ -40,9 +43,10 @@ struct shm {
 struct shm *open_shm(bool server)
 {
     // Server must open first.
-    int fd = open("/tmp/grader.shm", O_RDWR | (server ? O_CREAT|O_TRUNC : 0), 0600);
+    int fd = open(SHM_FILE, O_RDWR | (server ? O_CREAT|O_TRUNC : 0), 0600);
     assert(fd >= 0);
-    ftruncate(fd, sizeof(struct shm_page));
+    int ret = ftruncate(fd, sizeof(struct shm_page));
+    assert(ret == 0);
 
     struct shm_page *p = mmap(NULL, sizeof(*p), PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
     assert (p != MAP_FAILED);
@@ -63,6 +67,7 @@ struct shm *open_shm(bool server)
 
 void close_shm(struct shm *shm)
 {
+    unlink(SHM_FILE);
     close(shm->fd);
     munmap(shm->shm_page, sizeof(struct shm_page));
     free(shm);

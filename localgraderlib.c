@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-#define LIM (30*1000*1000)
+#define LIM (1000)
 
 int main()
 {
