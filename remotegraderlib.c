@@ -1,4 +1,7 @@
 #include "shm_interface.h"
+
+#define _GNU_SOURCE             /* For sched_setaffinity() */
+#include <sched.h>
 #include <unistd.h>
 #include <assert.h>
 #include <stdio.h>
@@ -16,8 +19,26 @@ int wait_for_message(struct shm *shm)
     return (arg0 >= 0); // -ve messages exit.
 }
 
+void ensure_two_cpus(void)
+{
+    long n_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    assert(n_cpus > 1);
+}
+
+void bind_to_cpu(int cpu)
+{
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(cpu, &cpuset);
+    int ret = sched_setaffinity(getpid(), sizeof(cpuset), &cpuset);
+    assert(ret == 0);
+}
+
 int main()
 {
+    ensure_two_cpus();
+    bind_to_cpu(0);
+
     struct shm *shm = open_shm(true);
     shm_send_message(shm, 0xabcd, 0x1234);
     pid_t pid;
@@ -31,6 +52,7 @@ int main()
                 "./solution",
                 NULL,
             };
+            bind_to_cpu(1);
             execv(argv[0], argv);
             assert(0);
             break;
