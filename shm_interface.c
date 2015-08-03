@@ -81,6 +81,7 @@ bool shm_wait_for_message_nb(struct shm *shm, int *arg0, int *arg1)
     else
         mbox = &shm->shm_page->s2c;
 
+    rmb();
     asm volatile ("" : : : "memory");
     if (mbox->ready == 0)
         return false;
@@ -105,9 +106,11 @@ void shm_wait_for_message(struct shm *shm, int *arg0, int *arg1)
         mbox = &shm->shm_page->c2s;
     else
         mbox = &shm->shm_page->s2c;
-    while (mbox->ready == 0) {
+    while (1) {
         rmb();
         asm volatile ("" : : : "memory");
+        if (mbox->ready != 0)
+            break;
     }
     // read barrier to ensure all future reads are issued after
     // the above read of ready.
